@@ -16,10 +16,13 @@
 
 package com.google.samples.apps.nowinandroid
 
+import android.os.Build
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
@@ -30,12 +33,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.core.view.WindowCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.metrics.performance.JankStats
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.samples.apps.nowinandroid.MainActivityUiState.Loading
 import com.google.samples.apps.nowinandroid.MainActivityUiState.Success
 import com.google.samples.apps.nowinandroid.core.analytics.AnalyticsHelper
@@ -101,16 +102,55 @@ class MainActivity : ComponentActivity() {
         }
 
         // Turn off the decor fitting system windows, which allows us to handle insets,
-        // including IME animations
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        // including IME animations, and go edge-to-edge
+        // This also sets up the initial system bar style based on the platform theme
+        enableEdgeToEdge()
 
         setContent {
-            val systemUiController = rememberSystemUiController()
             val darkTheme = shouldUseDarkTheme(uiState)
 
             // Update the dark content of the system bars to match the theme
-            DisposableEffect(systemUiController, darkTheme) {
-                systemUiController.systemBarsDarkContentEnabled = !darkTheme
+            DisposableEffect(darkTheme) {
+                enableEdgeToEdge(
+                    statusBarStyle = if (darkTheme) {
+                        SystemBarStyle.dark(
+                            scrim = android.graphics.Color.TRANSPARENT,
+                        )
+                    } else {
+                        SystemBarStyle.light(
+                            scrim = android.graphics.Color.TRANSPARENT,
+                            darkScrim = android.graphics.Color.TRANSPARENT,
+                        )
+                    },
+                    navigationBarStyle = if (Build.VERSION.SDK_INT >= 29) {
+                        // On API 29 and above, we have enforced contrast, so we can make the
+                        // bars fully transparent
+                        // We don't want to use SystemBarStyle.auto here, since that uses the
+                        // system dark mode or light mode value, not the users' selected option
+                        // https://issuetracker.google.com/issues/278263793
+                        if (darkTheme) {
+                            SystemBarStyle.dark(
+                                scrim = android.graphics.Color.TRANSPARENT,
+                            )
+                        } else {
+                            SystemBarStyle.light(
+                                scrim = android.graphics.Color.TRANSPARENT,
+                                darkScrim = android.graphics.Color.TRANSPARENT,
+                            )
+                        }
+                    } else {
+                        if (darkTheme) {
+                            SystemBarStyle.dark(
+                                scrim = darkScrim,
+                            )
+                        } else {
+                            SystemBarStyle.light(
+                                scrim = lightScrim,
+                                darkScrim = darkScrim,
+                            )
+                        }
+                    },
+                )
                 onDispose {}
             }
 
@@ -181,3 +221,6 @@ private fun shouldUseDarkTheme(
         DarkThemeConfig.DARK -> true
     }
 }
+
+private val lightScrim = android.graphics.Color.argb(0xe6, 0xFF, 0xFF, 0xFF)
+private val darkScrim = android.graphics.Color.argb(0x80, 0x1b, 0x1b, 0x1b)

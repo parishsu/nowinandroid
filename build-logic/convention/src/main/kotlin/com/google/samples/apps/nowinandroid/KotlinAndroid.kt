@@ -35,7 +35,7 @@ internal fun Project.configureKotlinAndroid(
     commonExtension: CommonExtension<*, *, *, *>,
 ) {
     commonExtension.apply {
-        compileSdk = 33
+        compileSdkPreview = "UpsideDownCake"
 
         defaultConfig {
             minSdk = 21
