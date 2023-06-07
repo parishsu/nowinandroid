@@ -32,6 +32,8 @@ class AndroidHiltConventionPlugin : Plugin<Project> {
 
             val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
             dependencies {
+                "implementation"("org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.6.2")
+                "kapt"("org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.6.2")
                 "implementation"(libs.findLibrary("hilt.android").get())
                 "kapt"(libs.findLibrary("hilt.compiler").get())
                 "kaptAndroidTest"(libs.findLibrary("hilt.compiler").get())
